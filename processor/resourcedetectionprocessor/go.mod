@@ -26,8 +26,8 @@ require (
 	go.opentelemetry.io/collector/semconv v0.87.1-0.20231023033326-37116a25be8d
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.26.0
-	k8s.io/apimachinery v0.28.2
-	k8s.io/client-go v0.28.2
+	k8s.io/apimachinery v0.28.3
+	k8s.io/client-go v0.28.3
 )
 
 require (
@@ -123,7 +123,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.28.2 // indirect
+	k8s.io/api v0.28.3 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
