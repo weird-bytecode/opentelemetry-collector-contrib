@@ -164,6 +164,7 @@ func (dp *perfTestDataProvider) GenerateLogs() (plog.Logs, bool) {
 type goldenDataProvider struct {
 	tracePairsFile     string
 	spanPairsFile      string
+	logPairsFile       string
 	dataItemsGenerated *atomic.Uint64
 
 	tracesGenerated []ptrace.Traces
@@ -172,15 +173,19 @@ type goldenDataProvider struct {
 	metricPairsFile  string
 	metricsGenerated []pmetric.Metrics
 	metricsIndex     int
+
+	logsGenerated []plog.Logs
+	logsIndex     int
 }
 
 // NewGoldenDataProvider creates a new instance of goldenDataProvider which generates test data based
 // on the pairwise combinations specified in the tracePairsFile and spanPairsFile input variables.
-func NewGoldenDataProvider(tracePairsFile string, spanPairsFile string, metricPairsFile string) DataProvider {
+func NewGoldenDataProvider(tracePairsFile string, spanPairsFile string, metricPairsFile string, logPairsFile string) DataProvider {
 	return &goldenDataProvider{
 		tracePairsFile:  tracePairsFile,
 		spanPairsFile:   spanPairsFile,
 		metricPairsFile: metricPairsFile,
+		logPairsFile:    logPairsFile,
 	}
 }
 
@@ -224,7 +229,20 @@ func (dp *goldenDataProvider) GenerateMetrics() (pmetric.Metrics, bool) {
 }
 
 func (dp *goldenDataProvider) GenerateLogs() (plog.Logs, bool) {
-	return plog.NewLogs(), true
+	if dp.logsGenerated == nil {
+		var err error
+		dp.logsGenerated, err = goldendataset.GenerateLogs(dp.logPairsFile)
+		if err != nil {
+			log.Printf("cannot generate logs: %s", err)
+		}
+	}
+	if dp.logsIndex == len(dp.logsGenerated) {
+		return plog.Logs{}, true
+	}
+	l := dp.logsGenerated[dp.logsIndex]
+	dp.logsIndex++
+	dp.dataItemsGenerated.Add(uint64(l.LogRecordCount()))
+	return l, false
 }
 
 // FileDataProvider in an implementation of the DataProvider for use in performance tests.

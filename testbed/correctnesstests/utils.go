@@ -109,6 +109,17 @@ func LoadPictOutputPipelineDefs(fileName string) ([]PipelineDef, error) {
 	return defs, err
 }
 
+func ConstructLogSender(t *testing.T, receiver string) testbed.DataSender {
+	var sender testbed.DataSender
+	switch receiver {
+	case "otlp":
+		sender = testbed.NewOTLPLogsDataSender(testbed.DefaultHost, testbed.GetAvailablePort(t))
+	default:
+		t.Errorf("unknown receiver type: %s", receiver)
+	}
+	return sender
+}
+
 // ConstructTraceSender creates a testbed trace sender from the passed-in trace sender identifier.
 func ConstructTraceSender(t *testing.T, receiver string) testbed.DataSender {
 	var sender testbed.DataSender

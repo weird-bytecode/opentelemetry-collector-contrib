@@ -1,0 +1,4 @@
+ResourceCount: One
+ScopeCount: One
+RecordCount: One
+Severity: Unspecified, Trace, Debug, Info, Warn, Error, Fatal
