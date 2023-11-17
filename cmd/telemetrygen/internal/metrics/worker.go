@@ -46,58 +46,82 @@ func (w worker) simulateMetrics(res *resource.Resource, exporterFunc func() (sdk
 			w.logger.Error("failed to stop the exporter", zap.Error(tempError))
 		}
 	}()
-
 	var i int64
+	histogramBucketBounds := w.histogramBucketBounds
+	histogramUpmostBound := int64(histogramBucketBounds[len(histogramBucketBounds)-1])
 	for w.running.Load() {
 		var metrics []metricdata.Metrics
 
+		// TODO: extract functions
 		switch w.metricType {
 		case metricTypeGauge:
+			var value int64 = i
+			if w.useRandomValues {
+				value = rand.Int63n(10000)
+			}
 			metrics = append(metrics, metricdata.Metrics{
 				Name: "gen",
 				Data: metricdata.Gauge[int64]{
 					DataPoints: []metricdata.DataPoint[int64]{
 						{
 							Time:       time.Now(),
-							Value:      i,
+							Value:      value,
 							Attributes: attribute.NewSet(signalAttrs...),
 						},
 					},
 				},
 			})
 		case metricTypeSum:
-
+			var value int64 = i
+			var isMonotonic bool = true
+			if w.useRandomValues {
+				value = rand.Int63n(10000)
+				isMonotonic = false
+			}
 			metrics = append(metrics, metricdata.Metrics{
 				Name: "gen",
 				Data: metricdata.Sum[int64]{
-					IsMonotonic: true,
+					IsMonotonic: isMonotonic,
 					Temporality: metricdata.CumulativeTemporality,
 					DataPoints: []metricdata.DataPoint[int64]{
 						{
 							StartTime:  time.Now().Add(-1 * time.Second),
 							Time:       time.Now(),
-							Value:      i,
+							Value:      value,
 							Attributes: attribute.NewSet(signalAttrs...),
 						},
 					},
 				},
 			})
 		case metricTypeHistogram:
-			bounds := w.histogramBucketBounds
-			bucketCounts := make([]uint64, len(bounds)+1)
-			for i := range bucketCounts {
-				bucketCounts[i] = 0
+			var count = 1
+			var sum = int64(i)
+			histogramBucketCounts := make([]uint64, len(histogramBucketBounds)+1)
+			for i := range histogramBucketCounts {
+				histogramBucketCounts[i] = 0
 			}
-			upmostBound := int64(bounds[len(bounds)-1])
-			var count = rand.Intn(10) + 1
-			var sum = int64(0)
-			for i := 0; i < count; i++ {
-				randomValue := rand.Int63n(upmostBound)
-				for j, max := range bounds {
-					if randomValue < int64(max) {
-						sum += randomValue
-						bucketCounts[j]++
-						break
+			if w.useRandomValues {
+				count = rand.Intn(100) + 1
+				sum = int64(0)
+				for j := 0; j < count; j++ {
+					randomValue := rand.Int63n(histogramUpmostBound)
+					for k, max := range histogramBucketBounds {
+						if randomValue < int64(max) {
+							sum += randomValue
+							histogramBucketCounts[k]++
+							break
+						}
+					}
+				}
+			} else {
+				if i > histogramUpmostBound {
+					histogramBucketCounts[len(histogramBucketCounts)-1]++
+				} else {
+					for k, max := range histogramBucketBounds {
+						if i < int64(max) {
+							histogramBucketCounts[k]++
+							break
+						}
 					}
 				}
 			}
@@ -112,8 +136,8 @@ func (w worker) simulateMetrics(res *resource.Resource, exporterFunc func() (sdk
 							Attributes:   attribute.NewSet(signalAttrs...),
 							Sum:          sum,
 							Count:        uint64(count),
-							Bounds:       bounds,
-							BucketCounts: bucketCounts,
+							Bounds:       histogramBucketBounds,
+							BucketCounts: histogramBucketCounts,
 						},
 					},
 				},
