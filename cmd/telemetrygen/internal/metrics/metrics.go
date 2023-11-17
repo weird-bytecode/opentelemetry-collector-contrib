@@ -74,14 +74,16 @@ func Run(c *Config, exp func() (sdkmetric.Exporter, error), logger *zap.Logger) 
 	for i := 0; i < c.WorkerCount; i++ {
 		wg.Add(1)
 		w := worker{
-			numMetrics:     c.NumMetrics,
-			metricType:     c.MetricType,
-			limitPerSecond: limit,
-			totalDuration:  c.TotalDuration,
-			running:        running,
-			wg:             &wg,
-			logger:         logger.With(zap.Int("worker", i)),
-			index:          i,
+			numMetrics:            c.NumMetrics,
+			metricType:            c.MetricType,
+			limitPerSecond:        limit,
+			histogramBucketBounds: c.HistogramBucketBounds,
+			useRandomValues:       c.UseRandomValues,
+			totalDuration:         c.TotalDuration,
+			running:               running,
+			wg:                    &wg,
+			logger:                logger.With(zap.Int("worker", i)),
+			index:                 i,
 		}
 
 		go w.simulateMetrics(res, exp, c.GetTelemetryAttributes())
