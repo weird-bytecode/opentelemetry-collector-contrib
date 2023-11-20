@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	file_cmd "github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen/internal/config_file"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen/internal/logs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen/internal/metrics"
@@ -19,9 +20,10 @@ import (
 )
 
 var (
-	tracesCfg  *traces.Config
-	metricsCfg *metrics.Config
-	logsCfg    *logs.Config
+	tracesCfg   *traces.Config
+	metricsCfg  *metrics.Config
+	logsCfg     *logs.Config
+	filePathCfg *file_cmd.FileCmdConfig
 )
 
 // rootCmd is the root command on which will be run children commands
@@ -61,8 +63,17 @@ var logsCmd = &cobra.Command{
 	},
 }
 
+var fileCmd = &cobra.Command{
+	Use:     "file",
+	Short:   "Provide a yml config file to generate multiple telemtry streams",
+	Example: "telemetrygen config=config.yml",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return file_cmd.Start(filePathCfg)
+	},
+}
+
 func init() {
-	rootCmd.AddCommand(tracesCmd, metricsCmd, logsCmd)
+	rootCmd.AddCommand(fileCmd, tracesCmd, metricsCmd, logsCmd)
 
 	tracesCfg = new(traces.Config)
 	tracesCfg.Flags(tracesCmd.Flags())
@@ -72,6 +83,9 @@ func init() {
 
 	logsCfg = new(logs.Config)
 	logsCfg.Flags(logsCmd.Flags())
+
+	filePathCfg = new(file_cmd.FileCmdConfig)
+	filePathCfg.Flags(fileCmd.Flags())
 
 	// Disabling completion command for end user
 	// https://github.com/spf13/cobra/blob/master/shell_completions.md

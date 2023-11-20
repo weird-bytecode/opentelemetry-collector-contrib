@@ -49,20 +49,20 @@ func (v *KeyValue) Type() string {
 }
 
 type Config struct {
-	WorkerCount           int
-	Rate                  int64
-	TotalDuration         time.Duration
-	ReportingInterval     time.Duration
-	SkipSettingGRPCLogger bool
+	WorkerCount           int           `yaml:"worker-count"`
+	Rate                  int64         `yaml:"rate"`
+	TotalDuration         time.Duration `yaml:"duration"`
+	ReportingInterval     time.Duration `yaml:"interval"`
+	SkipSettingGRPCLogger bool          `yaml:"-"`
 
 	// OTLP config
-	CustomEndpoint      string
-	Insecure            bool
-	UseHTTP             bool
-	HTTPPath            string
-	Headers             KeyValue
-	ResourceAttributes  KeyValue
-	TelemetryAttributes KeyValue
+	CustomEndpoint      string   `yaml:"otlp-endpoint"`
+	Insecure            bool     `yaml:"otlp-insecure"`
+	UseHTTP             bool     `yaml:"otlp-http"`
+	HTTPPath            string   `yaml:"-"`
+	Headers             KeyValue `yaml:"otlp-header"`
+	ResourceAttributes  KeyValue `yaml:"otlp-attributes"`
+	TelemetryAttributes KeyValue `yaml:"telemetry-attributes"`
 }
 
 // Endpoint returns the appropriate endpoint URL based on the selected communication mode (gRPC or HTTP)

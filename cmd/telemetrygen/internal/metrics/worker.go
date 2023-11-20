@@ -48,100 +48,20 @@ func (w worker) simulateMetrics(res *resource.Resource, exporterFunc func() (sdk
 	}()
 	var i int64
 	histogramBucketBounds := w.histogramBucketBounds
-	histogramUpmostBound := int64(histogramBucketBounds[len(histogramBucketBounds)-1])
+	var histogramUpmostBound int64
+	if w.histogramBucketBounds != nil {
+		histogramUpmostBound = int64(histogramBucketBounds[len(histogramBucketBounds)-1])
+	}
 	for w.running.Load() {
 		var metrics []metricdata.Metrics
 
-		// TODO: extract functions
 		switch w.metricType {
 		case metricTypeGauge:
-			var value int64 = i
-			if w.useRandomValues {
-				value = rand.Int63n(10000)
-			}
-			metrics = append(metrics, metricdata.Metrics{
-				Name: "gen",
-				Data: metricdata.Gauge[int64]{
-					DataPoints: []metricdata.DataPoint[int64]{
-						{
-							Time:       time.Now(),
-							Value:      value,
-							Attributes: attribute.NewSet(signalAttrs...),
-						},
-					},
-				},
-			})
+			metrics = appendGaugeMetric(i, w, metrics, signalAttrs)
 		case metricTypeSum:
-			var value int64 = i
-			var isMonotonic bool = true
-			if w.useRandomValues {
-				value = rand.Int63n(10000)
-				isMonotonic = false
-			}
-			metrics = append(metrics, metricdata.Metrics{
-				Name: "gen",
-				Data: metricdata.Sum[int64]{
-					IsMonotonic: isMonotonic,
-					Temporality: metricdata.CumulativeTemporality,
-					DataPoints: []metricdata.DataPoint[int64]{
-						{
-							StartTime:  time.Now().Add(-1 * time.Second),
-							Time:       time.Now(),
-							Value:      value,
-							Attributes: attribute.NewSet(signalAttrs...),
-						},
-					},
-				},
-			})
+			metrics = appendSumMetric(i, w, metrics, signalAttrs)
 		case metricTypeHistogram:
-			var count = 1
-			var sum = int64(i)
-			histogramBucketCounts := make([]uint64, len(histogramBucketBounds)+1)
-			for i := range histogramBucketCounts {
-				histogramBucketCounts[i] = 0
-			}
-			if w.useRandomValues {
-				count = rand.Intn(100) + 1
-				sum = int64(0)
-				for j := 0; j < count; j++ {
-					randomValue := rand.Int63n(histogramUpmostBound)
-					for k, max := range histogramBucketBounds {
-						if randomValue < int64(max) {
-							sum += randomValue
-							histogramBucketCounts[k]++
-							break
-						}
-					}
-				}
-			} else {
-				if i > histogramUpmostBound {
-					histogramBucketCounts[len(histogramBucketCounts)-1]++
-				} else {
-					for k, max := range histogramBucketBounds {
-						if i < int64(max) {
-							histogramBucketCounts[k]++
-							break
-						}
-					}
-				}
-			}
-			metrics = append(metrics, metricdata.Metrics{
-				Name: "gen",
-				Data: metricdata.Histogram[int64]{
-					Temporality: metricdata.CumulativeTemporality,
-					DataPoints: []metricdata.HistogramDataPoint[int64]{
-						{
-							StartTime:    time.Now().Add(-1 * time.Second),
-							Time:         time.Now(),
-							Attributes:   attribute.NewSet(signalAttrs...),
-							Sum:          sum,
-							Count:        uint64(count),
-							Bounds:       histogramBucketBounds,
-							BucketCounts: histogramBucketCounts,
-						},
-					},
-				},
-			})
+			metrics = appendHistogramMetric(i, w, metrics, signalAttrs, histogramBucketBounds, histogramUpmostBound)
 		default:
 			w.logger.Fatal("unknown metric type")
 		}
@@ -166,4 +86,102 @@ func (w worker) simulateMetrics(res *resource.Resource, exporterFunc func() (sdk
 
 	w.logger.Info("metrics generated", zap.Int64("metrics", i))
 	w.wg.Done()
+}
+
+func appendGaugeMetric(i int64, w worker, metrics []metricdata.Metrics, signalAttrs []attribute.KeyValue) []metricdata.Metrics {
+	var value int64 = i
+	if w.useRandomValues {
+		value = rand.Int63n(10000)
+	}
+	metrics = append(metrics, metricdata.Metrics{
+		Name: "gen",
+		Data: metricdata.Gauge[int64]{
+			DataPoints: []metricdata.DataPoint[int64]{
+				{
+					Time:       time.Now(),
+					Value:      value,
+					Attributes: attribute.NewSet(signalAttrs...),
+				},
+			},
+		},
+	})
+	return metrics
+}
+
+func appendSumMetric(i int64, w worker, metrics []metricdata.Metrics, signalAttrs []attribute.KeyValue) []metricdata.Metrics {
+	var value int64 = i
+	var isMonotonic bool = true
+	if w.useRandomValues {
+		value = rand.Int63n(10000)
+		isMonotonic = false
+	}
+	metrics = append(metrics, metricdata.Metrics{
+		Name: "gen",
+		Data: metricdata.Sum[int64]{
+			IsMonotonic: isMonotonic,
+			Temporality: metricdata.CumulativeTemporality,
+			DataPoints: []metricdata.DataPoint[int64]{
+				{
+					StartTime:  time.Now().Add(-1 * time.Second),
+					Time:       time.Now(),
+					Value:      value,
+					Attributes: attribute.NewSet(signalAttrs...),
+				},
+			},
+		},
+	})
+	return metrics
+}
+
+func appendHistogramMetric(i int64, w worker, metrics []metricdata.Metrics, signalAttrs []attribute.KeyValue,
+	histogramBucketBounds []float64, histogramUpmostBound int64) []metricdata.Metrics {
+	var count = 1
+	var sum = int64(i)
+	histogramBucketCounts := make([]uint64, len(histogramBucketBounds)+1)
+	for i := range histogramBucketCounts {
+		histogramBucketCounts[i] = 0
+	}
+	if w.useRandomValues {
+		count = rand.Intn(100) + 1
+		sum = int64(0)
+		for j := 0; j < count; j++ {
+			randomValue := rand.Int63n(histogramUpmostBound)
+			for k, max := range histogramBucketBounds {
+				if randomValue < int64(max) {
+					sum += randomValue
+					histogramBucketCounts[k]++
+					break
+				}
+			}
+		}
+	} else {
+		if i > histogramUpmostBound {
+			histogramBucketCounts[len(histogramBucketCounts)-1]++
+		} else {
+			for k, max := range histogramBucketBounds {
+				if i < int64(max) {
+					histogramBucketCounts[k]++
+					break
+				}
+			}
+		}
+	}
+	metrics = append(metrics, metricdata.Metrics{
+		Name: "gen",
+		Data: metricdata.Histogram[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			DataPoints: []metricdata.HistogramDataPoint[int64]{
+				{
+					StartTime:    time.Now().Add(-1 * time.Second),
+					Time:         time.Now(),
+					Attributes:   attribute.NewSet(signalAttrs...),
+					Sum:          sum,
+					Count:        uint64(count),
+					Bounds:       histogramBucketBounds,
+					BucketCounts: histogramBucketCounts,
+				},
+			},
+		},
+	})
+	return metrics
 }

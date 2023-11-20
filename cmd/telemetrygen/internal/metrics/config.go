@@ -11,11 +11,11 @@ import (
 
 // Config describes the test scenario.
 type Config struct {
-	common.Config
-	NumMetrics            int
-	MetricType            metricType
-	UseRandomValues       bool
-	HistogramBucketBounds []float64
+	common.Config         `yaml:",inline"`
+	NumMetrics            int        `yaml:"num-metrics"`
+	MetricType            metricType `yaml:"metric-type"`
+	UseRandomValues       bool       `yaml:"use-random-values"`
+	HistogramBucketBounds []float64  `yaml:"histogram-bucket-bounds"`
 }
 
 // Flags registers config flags.
