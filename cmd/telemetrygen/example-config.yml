@@ -1,0 +1,26 @@
+metrics:
+- metric-type: Histogram
+  worker-count: 1
+  # rate: 100
+  otlp-insecure: true
+  num-metrics: 1000
+  use-random-values: true
+  histogram-bucket-bounds: [10,50,100,500,1000,5000,10000]
+  otlp-attributes:
+    service.name: Service McServiceFace
+  telemetry-attributes:
+    httpverb: GET
+    endpoint: /checkout
+    status.code: 500
+- metric-type: Sum
+  worker-count: 1
+  rate: 100
+  otlp-insecure: true
+  num-metrics: 500
+  use-random-values: true
+  otlp-attributes:
+    service.name: Service McServiceFace
+  telemetry-attributes:
+    httpverb: GET
+    endpoint: /checkout
+    status.code: 200
