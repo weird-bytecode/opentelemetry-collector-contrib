@@ -4,6 +4,7 @@ dist:
   description: Local OpenTelemetry Collector Contrib binary, testing only.
   version: 0.96.0-dev
   otelcol_version: 0.96.0
+  output_path: .
 
 extensions:
   - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.96.1-0.20240315172937-3b5aee0c7a16
@@ -95,6 +96,7 @@ processors:
   - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.96.1-0.20240315172937-3b5aee0c7a16
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.96.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.96.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor v0.96.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.96.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.96.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.96.0
@@ -265,6 +267,7 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter => ../../exporter/googlemanagedprometheusexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver => ../../receiver/aerospikereceiver
   - github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor => ../../processor/cumulativetodeltaprocessor
+  - github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor => ../../processor/deltatocumulativeprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/processor/intervalprocessor => ../../processor/intervalprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sapmreceiver => ../../receiver/sapmreceiver
   - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver => ../../receiver/zipkinreceiver
