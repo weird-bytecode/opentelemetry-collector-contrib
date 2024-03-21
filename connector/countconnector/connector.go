@@ -36,6 +36,8 @@ type count struct {
 	metricsMetricDefs    map[string]metricDef[ottlmetric.TransformContext]
 	dataPointsMetricDefs map[string]metricDef[ottldatapoint.TransformContext]
 	logsMetricDefs       map[string]metricDef[ottllog.TransformContext]
+
+	logsSizer plog.Sizer
 }
 
 func (c *count) Capabilities() consumer.Capabilities {
@@ -165,7 +167,7 @@ func (c *count) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 func (c *count) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	var multiError error
 	countMetrics := pmetric.NewMetrics()
-	countMetrics.ResourceMetrics().EnsureCapacity(ld.ResourceLogs().Len())
+	countMetrics.ResourceMetrics().EnsureCapacity(ld.ResourceLogs().Len() + 1)
 	for i := 0; i < ld.ResourceLogs().Len(); i++ {
 		resourceLog := ld.ResourceLogs().At(i)
 		counter := newCounter[ottllog.TransformContext](c.logsMetricDefs)
@@ -193,6 +195,16 @@ func (c *count) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 		countScope.Scope().SetName(scopeName)
 
 		counter.appendMetricsTo(countScope.Metrics())
+
+		sizeMetric := countScope.Metrics().AppendEmpty()
+		sizeMetric.SetName("mdai_logs_size_bytes")
+		sizeMetric.SetDescription("Size of logs in bytes")
+		sizeSum := sizeMetric.SetEmptySum()
+		sizeSum.SetIsMonotonic(true)
+		sizeSum.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+		sizeDatapoint := sizeSum.DataPoints().AppendEmpty()
+		sizeDatapoint.SetIntValue(int64(c.logsSizer.LogsSize(ld)))
+		sizeDatapoint.SetTimestamp(pcommon.NewTimestampFromTime(counter.timestamp))
 	}
 	if multiError != nil {
 		return multiError

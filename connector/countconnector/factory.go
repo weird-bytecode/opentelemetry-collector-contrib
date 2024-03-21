@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/plog"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/expr"
@@ -149,9 +150,12 @@ func createLogsToMetrics(
 		metricDefs[name] = md
 	}
 
+	logsSizer := plog.ProtoMarshaler{}
+
 	return &count{
 		metricsConsumer: nextConsumer,
 		logsMetricDefs:  metricDefs,
+		logsSizer:       &logsSizer,
 	}, nil
 }
 
