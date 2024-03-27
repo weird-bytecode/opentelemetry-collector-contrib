@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/expr"
@@ -77,10 +79,14 @@ func createTracesToMetrics(
 		spanEventMetricDefs[name] = md
 	}
 
+	tracesSizer := ptrace.ProtoMarshaler{}
+
 	return &count{
 		metricsConsumer:      nextConsumer,
 		spansMetricDefs:      spanMetricDefs,
 		spanEventsMetricDefs: spanEventMetricDefs,
+		tracesSizer:          &tracesSizer,
+		sizeTraces:           c.SizeTraces,
 	}, nil
 }
 
@@ -120,10 +126,14 @@ func createMetricsToMetrics(
 		dataPointMetricDefs[name] = md
 	}
 
+	metricsSizer := pmetric.ProtoMarshaler{}
+
 	return &count{
 		metricsConsumer:      nextConsumer,
 		metricsMetricDefs:    metricMetricDefs,
 		dataPointsMetricDefs: dataPointMetricDefs,
+		metricsSizer:         &metricsSizer,
+		sizeMetrics:          c.SizeMetrics,
 	}, nil
 }
 
@@ -156,6 +166,7 @@ func createLogsToMetrics(
 		metricsConsumer: nextConsumer,
 		logsMetricDefs:  metricDefs,
 		logsSizer:       &logsSizer,
+		sizeLogs:        c.SizeLogs,
 	}, nil
 }
 

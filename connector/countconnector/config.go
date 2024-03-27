@@ -32,11 +32,14 @@ const (
 
 // Config for the connector
 type Config struct {
-	Spans      map[string]MetricInfo `mapstructure:"spans"`
-	SpanEvents map[string]MetricInfo `mapstructure:"spanevents"`
-	Metrics    map[string]MetricInfo `mapstructure:"metrics"`
-	DataPoints map[string]MetricInfo `mapstructure:"datapoints"`
-	Logs       map[string]MetricInfo `mapstructure:"logs"`
+	Spans       map[string]MetricInfo `mapstructure:"spans"`
+	SpanEvents  map[string]MetricInfo `mapstructure:"spanevents"`
+	Metrics     map[string]MetricInfo `mapstructure:"metrics"`
+	DataPoints  map[string]MetricInfo `mapstructure:"datapoints"`
+	Logs        map[string]MetricInfo `mapstructure:"logs"`
+	SizeLogs    bool                  `mapstructure:"size_logs"`
+	SizeMetrics bool                  `mapstructure:"size_metrics"`
+	SizeTraces  bool                  `mapstructure:"size_traces"`
 }
 
 // MetricInfo for a data type
